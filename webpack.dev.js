@@ -1,0 +1,64 @@
+const path = require('path');
+const webpack = require("webpack");
+const PACKAGE = require('./package.json');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+
+module.exports = {
+    entry: {
+        index: './src/index.js',
+    },
+
+    output: {
+        filename: 'script.js',
+        path: path.resolve(__dirname, 'dev'),
+        clean: true,
+    },
+
+    module: {
+        rules: [
+            {
+                test: /\.css$/,
+                use: [
+                    MiniCssExtractPlugin.loader,
+                    "css-loader"
+                ]
+            },
+            {
+                test: /favicon\.svg$/,
+                type: 'asset/resource',
+            }
+        ]
+    },
+
+    plugins: [
+        new HtmlWebpackPlugin({
+            template: `./src/index.html`,
+            filename: `index.html`,
+            inject: true,
+            minify: false,
+            version: PACKAGE.version,
+            title: PACKAGE.title,
+        }),
+        new MiniCssExtractPlugin({
+            filename: 'style.css',
+        }),
+        new webpack.DefinePlugin({
+            APP_VER: JSON.stringify(PACKAGE.version),
+            USE_SW: JSON.stringify(false),
+        }),
+    ],
+
+    devServer: {
+        watchFiles: ['src/*.html'],
+        static: path.resolve(__dirname, './dev'),
+        hot: true,
+        open: true,
+    },
+
+    watchOptions: {
+        poll: 1000,
+    },
+
+    mode: 'development',
+};
