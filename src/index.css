@@ -39,6 +39,8 @@ header {
     font-size: 18px;
     background: var(--mid);
     z-index: 1;
+    position: fixed;
+    width: 100%;
 }
 
 header>div {
@@ -49,6 +51,7 @@ main {
     flex: 1;
     position: relative;
     display: flex;
+    padding-top: 40px;
 }
 
 .cv_col {

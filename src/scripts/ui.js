@@ -211,12 +211,12 @@ async function send_h() {
     let formData = new FormData();
     formData.append('bitmap', new Blob([res], { type: "application/octet-stream" }));
 
-    let res = await fetchT(window.location.href + `bitmap?width=${conv.img.W}&height=${conv.img.H}&type=${conv.ext}`, {
+    let ok = await fetchT(window.location.href + `bitmap?width=${conv.img.W}&height=${conv.img.H}&type=${conv.ext}`, {
         method: 'POST',
         body: formData,
         timeout: 2000
     });
-    alert(res ? 'Sent' : 'Send error');
+    alert(ok ? 'Sent' : 'Send error');
 }
 function makeArray(bin, name) {
     let pad = bin.BYTES_PER_ELEMENT * 2;
