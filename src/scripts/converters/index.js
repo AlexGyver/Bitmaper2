@@ -1,5 +1,5 @@
 import { ui_conv, ui_out, update_h } from "../ui";
-import { Mono1, Mono8H, Mono8Vcol, Mono8Vrow, MonoGImg, MonoGMap, MonoGPack } from "./mono";
+import { Mono1, Mono8H, Mono8HLSB, Mono8Vcol, Mono8Vrow, MonoGImg, MonoGMap, MonoGPack } from "./mono";
 import { RGB233, RGB24, RGB565, RGB888 } from "./rgb";
 import Gray from "./gray";
 import { Test } from "./test";
@@ -17,6 +17,7 @@ export function change_conv(n) {
 export let converters = [
     Mono1,
     Mono8H,
+    Mono8HLSB,
     Mono8Vcol,
     Mono8Vrow,
     MonoGImg,

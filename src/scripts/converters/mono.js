@@ -38,7 +38,7 @@ export class Mono1 extends Mono {
 }
 
 export class Mono8H extends Mono {
-    static name = '8x Horizontal';
+    static name = '8x Horizontal MSB';
     ext = '8h';
 
     async encode() {
@@ -56,6 +56,21 @@ export class Mono8H extends Mono {
             }
         }
         return Uint8Array.from(data);
+    }
+}
+
+export class Mono8HLSB extends Mono8H {
+    static name = '8x Horizontal LSB';
+
+    async encode() {
+        function reverseBits8(x) {
+            x = ((x & 0xF0) >> 4) | ((x & 0x0F) << 4);
+            x = ((x & 0xCC) >> 2) | ((x & 0x33) << 2);
+            x = ((x & 0xAA) >> 1) | ((x & 0x55) << 1);
+            return x;
+        }
+
+        return (await super.encode()).map(reverseBits8);
     }
 }
 

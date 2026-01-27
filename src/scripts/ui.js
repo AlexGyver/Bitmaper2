@@ -4,7 +4,7 @@ import loadImage from "./ImageLoader";
 import DragBlock from "@alexgyver/drag-block";
 import { app } from "./app";
 import { change_conv, conv, converters } from "./converters";
-import { clipRead, clipWrite, decodeText, download, encodeText, fetchT, LS } from "@alexgyver/utils";
+import { clipWrite, decodeText, download, encodeText, fetchT, LS } from "@alexgyver/utils";
 
 /** @type {UI} */
 export let ui_in;
@@ -55,6 +55,7 @@ export function initUI() {
         .addFile('file', 'File', file_h)
         .addInput('link', 'Link', '', file_h)
         .addButton('paste', 'Paste', paste_h)
+        .addButton('fil_png', 'Save .png', fil_png_h)
         .addSpace()
         .addNumber('width', 'Width', 128, 1, resize_h)
         .addNumber('height', 'Height', 64, 1, resize_h)
@@ -99,6 +100,7 @@ export function initUI() {
         .addHTML('result', '', '')
         .addButtons({ copy: ['Copy', copy_h], header: ['Save .h', saveH_h] })
         .addButtons(btns)
+        .addButton('proc_png', 'Save .png', proc_png_h)
 
     cvimg = new ImageCanvas(app.$cvimg, update_h);
 
@@ -286,4 +288,18 @@ const uint16_t ${name}_h = ${h};
     }
 
     return code;
+}
+
+function save_png(cv, name) {
+    let link = document.createElement('a');
+    link.href = cv.toDataURL('image/png');
+    link.download = name + '.png';
+    link.click();
+}
+
+function fil_png_h() {
+    save_png(cvimg.cv, ui_out.name + '.filt');
+}
+function proc_png_h() {
+    save_png(conv.cv, ui_out.name + '.proc');
 }
