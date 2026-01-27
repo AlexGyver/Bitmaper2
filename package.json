@@ -32,7 +32,7 @@
   "dependencies": {
     "@alexgyver/component": "^1.4.0",
     "@alexgyver/drag-block": "^1.3.1",
-    "@alexgyver/ui": "^1.6.2",
+    "@alexgyver/ui": "^1.6.3",
     "@alexgyver/utils": "^1.2.4"
   }
 }
