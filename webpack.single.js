@@ -60,7 +60,6 @@ module.exports = {
         }),
         new webpack.DefinePlugin({
             APP_VER: JSON.stringify(PACKAGE.version),
-            USE_SW: JSON.stringify(false),
         }),
         new HTMLInlineCSSWebpackPlugin(),
     ],

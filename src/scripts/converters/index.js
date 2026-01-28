@@ -10,7 +10,6 @@ export let conv;
 export function change_conv(n) {
     ui_conv.removeAll();
     conv = new (converters)[n]();
-    ui_out.getWidget('save').label = 'Save .' + conv.ext;
     update_h();
 }
 

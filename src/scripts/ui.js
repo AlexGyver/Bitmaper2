@@ -43,19 +43,16 @@ export function toggleDark() {
 function setDark(dark) {
     dark ? document.body.classList.add('darkmode') : document.body.classList.remove('darkmode');
     let theme = (dark ? 'dark' : 'light');
-    ui_in.setTheme(theme);
-    ui_out.setTheme(theme);
-    ui_conv.setTheme(theme);
-    ui_sel.setTheme(theme);
+    [ui_in, ui_out, ui_conv, ui_sel].forEach(ui => ui.setTheme(theme));
     colors = { off: dark ? '#1e232a' : '#fff', on: dark ? '#478be6' : '#000000' };
 }
 
 export function initUI() {
+    // =============== ui_in ===============
     ui_in = new UI({ parent: app.$ui_in, width: 'unset' })
         .addFile('file', 'File', file_h)
         .addInput('link', 'Link', '', file_h)
         .addButton('paste', 'Paste', paste_h)
-        .addButton('fil_png', 'Save .png', fil_png_h)
         .addSpace()
         .addNumber('width', 'Width', 128, 1, resize_h)
         .addNumber('height', 'Height', 64, 1, resize_h)
@@ -68,12 +65,12 @@ export function initUI() {
         .addRange('saturate', 'Saturation', 100, 0, 300, 5, update_h)
         .addRange('blur', 'Blur', 0, 0, 1, 0.05, update_h)
         .addSpace()
-        .addSwitch('mask', 'Mask', false, update_h)
+        .addSwitch('mask', 'Color mask', false, mask_h)
         .addColor('mask_color', 'Color', '#000000', update_h)
         .addRange('mask_tol', 'Tolerance', 0, 0, 400, 1, update_h)
         .addRange('mask_amp', 'Amplify', 1, 1, 10, 0.5, update_h)
         .addSpace()
-        .addSwitch('gray', 'Gray Filters', false, update_h)
+        .addSwitch('gray', 'Gray Filters', false, gray_h)
         .addSwitch('edges', 'Edges Simple', 0, update_h)
         .addRange('sobel', 'Edges Sobel', 0, 0, 1, 0.05, update_h)
         .addSelect('dither', 'Dithering', ['None', 'Floyd-Steinberg', 'JJN', 'Bayer', 'Riemersma'], update_h)
@@ -81,26 +78,35 @@ export function initUI() {
         .addSwitch('median', 'Edges Median', 0, update_h)
         .addSwitch('invert', 'Invert', 0, update_h)
         .addSpace()
-        .addButton('reset', 'Reset', reset_h);
+        .addButton('reset', 'Reset', reset_h)
+        .addSpace()
+        .addSlider('prev_width', 'Preview width', 900, 50, 1500, 1, prev_width_h)
+        .addSwitch('fil_show', 'Show filter preview', true, fil_show_h)
+        .addButton('fil_png', 'Save filter .png', fil_png_h)
+        .addSwitch('proc_show', 'Show process preview', true, proc_show_h)
+        .addButton('proc_png', 'Save process .png', proc_png_h)
 
+    // =============== ui_sel ===============
     ui_sel = new UI({ parent: app.$ui_out, width: 'unset' })
         .addSelect('conv', 'Converter', converters.map(v => v.name), change_conv)
 
+    // =============== ui_conv ===============
     ui_conv = new UI({ parent: app.$ui_out, width: 'unset' })
 
-    let btns = { save: ['save', saveBin_h] };
-    if (window.location.hostname.match(/^((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])(\.(?!$)|$)){4}$/)) {
-        btns.send = ['Send', send_h];
-    }
 
+    // =============== ui_out ===============
     ui_out = new UI({ parent: app.$ui_out, width: 'unset' })
         .addInput('name', 'Name', 'none')
         .addSwitch('pgm', 'PROGMEM', true)
         .addButton('encode', 'Encode', encode_h)
         .addHTML('result', '', '')
-        .addButtons({ copy: ['Copy', copy_h], header: ['Save .h', saveH_h] })
-        .addButtons(btns)
-        .addButton('proc_png', 'Save .png', proc_png_h)
+        .addSpace()
+        .addButtons({ copy: ['Copy code', copy_h], header: ['Save .h', saveH_h] })
+        .addButtons({ save: ['Save bin', saveBin_h] })
+
+    if (window.location.hostname.match(/^((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])(\.(?!$)|$)){4}$/)) {
+        ui_out.addButton('send', 'Send to host', send_h);
+    }
 
     cvimg = new ImageCanvas(app.$cvimg, update_h);
 
@@ -111,6 +117,9 @@ export function initUI() {
     new DragBlock(app.$cvres, e => {
         if (e.type == 'click') conv.click(e.pos.x / e.width, e.pos.y / e.height);
     });
+
+    gray_h(false);
+    mask_h(false);
 }
 
 async function paste_h() {
@@ -302,4 +311,21 @@ function fil_png_h() {
 }
 function proc_png_h() {
     save_png(conv.cv, ui_out.name + '.proc');
+}
+function gray_h(show) {
+    ['edges', 'sobel', 'dither', 'thresh', 'median', 'invert'].forEach(f => ui_in.getWidget(f).display(show));
+    update_h();
+}
+function mask_h(show) {
+    ['mask_tol', 'mask_amp'].forEach(f => ui_in.getWidget(f).display(show));
+    update_h();
+}
+function fil_show_h(show) {
+    cvimg.cv.classList.toggle('hidden');
+}
+function proc_show_h(show) {
+    conv.cv.classList.toggle('hidden');
+}
+function prev_width_h(w) {
+    document.body.style.setProperty('--maxw', w + 'px');
 }

@@ -72,6 +72,10 @@ main {
     height: auto;
 }
 
+.cv_col>canvas.hidden {
+    display: none;
+}
+
 .ui_in,
 .ui_out {
     position: fixed;
