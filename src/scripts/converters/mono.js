@@ -37,20 +37,25 @@ export class Mono1 extends Mono {
     }
 }
 
-export class Mono8H extends Mono {
-    static name = '8x Horizontal MSB';
+export class Mono8HLSB extends Mono {
+    static name = '8x Horizontal';
     ext = '8h';
 
     async encode() {
         let m = this.img;
         let data = [];
         let chunk = Math.ceil(m.W / 8);
+
         for (let y = 0; y < m.H; y++) {
             for (let xx = 0; xx < chunk; xx++) {
                 let byte = 0;
                 for (let b = 0; b < 8; b++) {
-                    byte <<= 1;
-                    byte |= m.get(xx * 8 + b, y) ? 1 : 0;
+                    byte >>= 1;
+
+                    let x = xx * 8 + b;
+                    if (x < m.W && m.get(x, y)) {
+                        byte |= 1 << 7;
+                    }
                 }
                 data.push(byte);
             }
@@ -59,18 +64,30 @@ export class Mono8H extends Mono {
     }
 }
 
-export class Mono8HLSB extends Mono8H {
-    static name = '8x Horizontal LSB';
+export class Mono8HMSB extends Mono {
+    static name = '8x Horizontal MSB';
+    ext = '8h';
 
     async encode() {
-        function reverseBits8(x) {
-            x = ((x & 0xF0) >> 4) | ((x & 0x0F) << 4);
-            x = ((x & 0xCC) >> 2) | ((x & 0x33) << 2);
-            x = ((x & 0xAA) >> 1) | ((x & 0x55) << 1);
-            return x;
-        }
+        let m = this.img;
+        let data = [];
+        let chunk = Math.ceil(m.W / 8);
 
-        return (await super.encode()).map(reverseBits8);
+        for (let y = 0; y < m.H; y++) {
+            for (let xx = 0; xx < chunk; xx++) {
+                let byte = 0;
+                for (let b = 0; b < 8; b++) {
+                    byte <<= 1;
+
+                    let x = xx * 8 + b;
+                    if (x < m.W && m.get(x, y)) {
+                        byte |= 1;
+                    }
+                }
+                data.push(byte);
+            }
+        }
+        return Uint8Array.from(data);
     }
 }
 
@@ -90,7 +107,10 @@ export class Mono8Vcol extends Mono {
                 let byte = 0;
                 for (let b = 0; b < 8; b++) {
                     byte >>= 1;
-                    byte |= (m.get(x, yy * 8 + b) ? 1 : 0) << 7;
+                    let y = yy * 8 + b;
+                    if (y < m.H && m.get(x, y)) {
+                        byte |= 1 << 7;
+                    }
                 }
                 data.push(byte);
             }
@@ -112,7 +132,10 @@ export class Mono8Vrow extends Mono {
                 let byte = 0;
                 for (let b = 0; b < 8; b++) {
                     byte >>= 1;
-                    byte |= (m.get(x, yy * 8 + b) ? 1 : 0) << 7;
+                    let y = yy * 8 + b;
+                    if (y < m.H && m.get(x, y)) {
+                        byte |= 1 << 7;
+                    }
                 }
                 data.push(byte);
             }
