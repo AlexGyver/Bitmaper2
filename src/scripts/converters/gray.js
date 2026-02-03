@@ -6,6 +6,7 @@ export default class Gray extends ConverterBase {
     gray = true;
 
     async encode() {
-        return Uint8Array.from(this.img.buf);
+        let img = this.getImg();
+        return Uint8Array.from(img.buf);
     }
 }

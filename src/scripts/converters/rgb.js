@@ -7,7 +7,7 @@ export class RGB24 extends ConverterBase {
     ext = 'rgb24';
 
     async encode() {
-        return Uint32Array.from(this.img.buf);
+        return Uint32Array.from(this.getImg().buf);
     }
 
     _encodeColor(r, g, b) {
@@ -24,7 +24,7 @@ export class RGB888 extends RGB24 {
 
     async encode() {
         let res = [];
-        this.img.buf.forEach(v => res.push(...HEXtoRGB(v)));
+        this.getImg().buf.forEach(v => res.push(...HEXtoRGB(v)));
         return Uint8Array.from(res);
     }
 }
@@ -35,7 +35,7 @@ export class RGB565 extends ConverterBase {
     ext = 'rgb565';
 
     async encode() {
-        return Uint16Array.from(this.img.buf);
+        return Uint16Array.from(this.getImg().buf);
     }
 
     _encodeColor(r, g, b) {
@@ -51,7 +51,7 @@ export class RGB233 extends ConverterBase {
     ext = 'rgb233';
 
     async encode() {
-        return Uint8Array.from(this.img.buf);
+        return Uint8Array.from(this.getImg().buf);
     }
 
     _encodeColor(r, g, b) {

@@ -10,7 +10,8 @@ class Mono extends ConverterBase {
         this.ui.addSlider('thresh', 'Threshold', 128, 0, 256, 1, () => this.show())
     }
 
-    filter(img) {
+    getImg() {
+        let img = this.img.copy();
         threshold(img.buf, this.ui.thresh);
         return img;
     }
@@ -33,7 +34,7 @@ export class Mono1 extends Mono {
     ext = '1p';
 
     async encode() {
-        return Uint8Array.from(this.img.buf.map(x => x ? 1 : 0));
+        return Uint8Array.from(this.getImg().buf.map(x => x ? 1 : 0));
     }
 }
 
@@ -42,7 +43,7 @@ export class Mono8HLSB extends Mono {
     ext = '8h';
 
     async encode() {
-        let m = this.img;
+        let m = this.getImg();
         let data = [];
         let chunk = Math.ceil(m.W / 8);
 
@@ -69,7 +70,7 @@ export class Mono8HMSB extends Mono {
     ext = '8h';
 
     async encode() {
-        let m = this.img;
+        let m = this.getImg();
         let data = [];
         let chunk = Math.ceil(m.W / 8);
 
@@ -96,7 +97,7 @@ export class Mono8Vcol extends Mono {
     ext = '8vc';
 
     async encode() {
-        return Uint8Array.from(Mono8Vcol.make(this.img));
+        return Uint8Array.from(Mono8Vcol.make(this.getImg()));
     }
 
     static make(m) {
@@ -124,7 +125,7 @@ export class Mono8Vrow extends Mono {
     ext = '8vr';
 
     async encode() {
-        let m = this.img;
+        let m = this.getImg();
         let data = [];
         let chunk = Math.ceil(m.H / 8);
         for (let yy = 0; yy < chunk; yy++) {
@@ -150,7 +151,7 @@ export class MonoGImg extends Mono {
     prefix = 'gfximage_t';
 
     async encode() {
-        let m = this.img;
+        let m = this.getImg();
         let mapsize = Math.ceil(m.H / 8) * m.W + 4;
         let pack = MonoGPack.make(m);
         return Uint8Array.from((mapsize <= pack.length) ? [0].concat(MonoGMap.make(m)) : [1].concat(pack));
@@ -163,7 +164,7 @@ export class MonoGMap extends Mono {
     prefix = 'gfxmap_t';
 
     async encode() {
-        return Uint8Array.from(MonoGMap.make(this.img));
+        return Uint8Array.from(MonoGMap.make(this.getImg()));
     }
 
     static make(m) {
@@ -177,7 +178,7 @@ export class MonoGPack extends Mono {
     prefix = 'gfxpack_t';
 
     async encode() {
-        return Uint8Array.from(MonoGPack.make(this.img));
+        return Uint8Array.from(MonoGPack.make(this.getImg()));
     }
 
     static make(m) {

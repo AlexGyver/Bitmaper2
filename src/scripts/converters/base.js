@@ -16,6 +16,10 @@ export default class ConverterBase {
 
     click() { }
 
+    getImg() {
+        return this.img;
+    }
+
     convert(data, w, h) {
         this.img.resize(w, h);
         for (let i = 0, j = 0; i < data.length; i += 4, j++) {
@@ -27,7 +31,7 @@ export default class ConverterBase {
     }
 
     show() {
-        let img = this.filter ? this.filter(this.img.copy()) : this.img;
+        let img = this.getImg();
         let grid = Math.ceil(this.cv.clientWidth / img.W);
 
         if (grid > 1) {

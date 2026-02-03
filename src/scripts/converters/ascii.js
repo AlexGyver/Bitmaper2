@@ -59,21 +59,22 @@ export default class ASCII extends ConverterBase {
     }
 
     getText() {
+        let img = this.getImg();
         let pallette = this.pallette[this.ui.res];
         let len = pallette.length;
         let half = this.ui.half;
         let res = "";
 
-        for (let y = 0; y < this.img.H; y++) {
-            for (let x = 0; x < this.img.W; x++) {
-                let pix = this.img.buf[y * this.img.W + x];
-                if (half && y < this.img.H - 1) {
-                    pix = (pix + this.img.buf[(y + 1) * this.img.W + x]) / 2;
+        for (let y = 0; y < img.H; y++) {
+            for (let x = 0; x < img.W; x++) {
+                let pix = img.buf[y * img.W + x];
+                if (half && y < img.H - 1) {
+                    pix = (pix + img.buf[(y + 1) * img.W + x]) / 2;
                 }
                 res += pallette[((255 - pix) * (len - 1) / 255) << 0];
             }
             if (half) y++;
-            if (y < this.img.H - 1) res += '\n';
+            if (y < img.H - 1) res += '\n';
         }
         return res;
     }
