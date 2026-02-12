@@ -93,7 +93,6 @@ export function initUI() {
     // =============== ui_conv ===============
     ui_conv = new UI({ parent: app.$ui_out, width: 'unset' })
 
-
     // =============== ui_out ===============
     ui_out = new UI({ parent: app.$ui_out, width: 'unset' })
         .addInput('name', 'Name', 'none')
@@ -107,7 +106,7 @@ export function initUI() {
     if (window.location.hostname.match(/^((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])(\.(?!$)|$)){4}$/)) {
         ui_out.addButton('send', 'Send to host', send_h);
     }
-
+    
     cvimg = new ImageCanvas(app.$cvimg, update_h);
 
     initDark();

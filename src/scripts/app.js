@@ -1,11 +1,12 @@
 import { EL } from "@alexgyver/component";
 import { toggleDark } from "./ui";
-import { help, help_text } from "./help";
+import { help_text } from "./help";
 
 export let app = {};
 
 export function initApp() {
-    EL.configIn(app, document.body, {
+    EL.update(document.body, {
+        ctx: app,
         children: [
             {
                 tag: 'header',
@@ -15,21 +16,21 @@ export function initApp() {
                         children: [
                             {
                                 class: 'bt_btn icon bars',
-                                click: () => {
+                                onClick: () => {
                                     app.$ui_in.classList.toggle('ui_hidden');
                                     app.$ui_out.classList.add('ui_hidden');
                                 }
                             },
                             {
                                 class: 'bt_btn icon code',
-                                click: () => {
+                                onClick: () => {
                                     app.$ui_in.classList.add('ui_hidden');
                                     app.$ui_out.classList.toggle('ui_hidden');
                                 }
                             },
                             {
                                 class: 'icon info',
-                                click: () => {
+                                onClick: () => {
                                     app.$help.classList.toggle('hidden');
                                 }
                             },
@@ -42,7 +43,7 @@ export function initApp() {
                         style: 'display:flex',
                         child: {
                             class: 'icon moon',
-                            click: e => toggleDark(),
+                            onClick: e => toggleDark(),
                         }
                     }
                 ]
@@ -76,7 +77,7 @@ export function initApp() {
             {
                 class: 'help_overlay hidden',
                 $: 'help',
-                click: e => {
+                onClick: e => {
                     app.$help.classList.toggle('hidden');
                 },
                 child: {
