@@ -1,1 +1,76 @@
-const CACHE_NAME="cache_68b63fb5c76ab3de8ccc",CACHED_URLS=["/","/favicon.svg","/index.html","/script.js","/style.css"];async function handleFetch(e){const t=await caches.open(CACHE_NAME),a=await t.match(e);if(a)return a;try{return await fetch(e)}catch(e){return new Response("Offline and resource not cached",{status:503,statusText:"Service Unavailable"})}}async function updateCache(e){if("GET"===e.method)try{const t=await fetch(e),a=await caches.open(CACHE_NAME);await a.put(e,t.clone())}catch(e){}}self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE_NAME).then(e=>e.addAll(CACHED_URLS)))}),self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(e=>Promise.all(e.filter(e=>e!==CACHE_NAME).map(e=>caches.delete(e)))))}),self.addEventListener("fetch",e=>{const{request:t}=e;t.url.startsWith(self.location.origin)&&("only-if-cached"===t.cache&&"same-origin"!==t.mode||(e.respondWith(handleFetch(t)),e.waitUntil(updateCache(t))))});
+const CACHE_NAME = 'cache_@cachename';
+
+const CACHED_URLS = [
+    '/',
+    '/favicon.svg',
+    '/index.html',
+    '/script.js',
+    '/style.css',
+];
+
+self.addEventListener('install', event => {
+    event.waitUntil((async () => {
+        const cache = await caches.open(CACHE_NAME);
+
+        for (const url of CACHED_URLS) {
+            try {
+                await cache.add(url);
+            } catch (e) { }
+        }
+
+        await self.skipWaiting();
+    })());
+});
+
+self.addEventListener('activate', event => {
+    event.waitUntil((async () => {
+        const cacheNames = await caches.keys();
+
+        await Promise.all(
+            cacheNames
+                .filter(name => name !== CACHE_NAME)
+                .map(name => caches.delete(name))
+        );
+
+        await self.clients.claim();
+    })());
+});
+
+self.addEventListener('fetch', event => {
+    const { request } = event;
+
+    if (request.method !== 'GET') return;
+    if (!request.url.startsWith(self.location.origin)) return;
+    if (request.cache === 'only-if-cached' && request.mode !== 'same-origin') return;
+
+    event.respondWith(handleFetch(request));
+    event.waitUntil(updateCache(request));
+});
+
+async function handleFetch(request) {
+    const cache = await caches.open(CACHE_NAME);
+    const cachedResponse = await cache.match(request);
+
+    if (cachedResponse) return cachedResponse;
+
+    try {
+        const networkResponse = await fetch(request);
+        return networkResponse;
+    } catch (error) {
+        return new Response('Offline and resource not cached', {
+            status: 503,
+            statusText: 'Service Unavailable',
+        });
+    }
+}
+
+async function updateCache(request) {
+    try {
+        const response = await fetch(request);
+
+        if (!response || !response.ok) return;
+
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(request, response.clone());
+    } catch (e) { }
+}

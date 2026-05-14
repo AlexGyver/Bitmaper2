@@ -8,31 +8,38 @@ const CACHED_URLS = [
     '/style.css',
 ];
 
-// Установка: добавление файлов в кеш
 self.addEventListener('install', event => {
-    event.waitUntil(
-        caches.open(CACHE_NAME).then(cache => cache.addAll(CACHED_URLS))
-    );
+    event.waitUntil((async () => {
+        const cache = await caches.open(CACHE_NAME);
+
+        for (const url of CACHED_URLS) {
+            try {
+                await cache.add(url);
+            } catch (e) { }
+        }
+
+        await self.skipWaiting();
+    })());
 });
 
-// Активация: удаление старых кешей
 self.addEventListener('activate', event => {
-    event.waitUntil(
-        caches.keys().then(cacheNames =>
-            Promise.all(
-                cacheNames
-                    .filter(name => name !== CACHE_NAME)
-                    .map(name => caches.delete(name))
-            )
-        )
-    );
+    event.waitUntil((async () => {
+        const cacheNames = await caches.keys();
+
+        await Promise.all(
+            cacheNames
+                .filter(name => name !== CACHE_NAME)
+                .map(name => caches.delete(name))
+        );
+
+        await self.clients.claim();
+    })());
 });
 
-// Обработка запросов
 self.addEventListener('fetch', event => {
     const { request } = event;
 
-    // Пропускаем кросс-доменные и специальные запросы
+    if (request.method !== 'GET') return;
     if (!request.url.startsWith(self.location.origin)) return;
     if (request.cache === 'only-if-cached' && request.mode !== 'same-origin') return;
 
@@ -40,7 +47,6 @@ self.addEventListener('fetch', event => {
     event.waitUntil(updateCache(request));
 });
 
-// отдаём ресурс из кеша или из сети
 async function handleFetch(request) {
     const cache = await caches.open(CACHE_NAME);
     const cachedResponse = await cache.match(request);
@@ -51,7 +57,6 @@ async function handleFetch(request) {
         const networkResponse = await fetch(request);
         return networkResponse;
     } catch (error) {
-        // return caches.match('/offline.html');
         return new Response('Offline and resource not cached', {
             status: 503,
             statusText: 'Service Unavailable',
@@ -59,11 +64,12 @@ async function handleFetch(request) {
     }
 }
 
-// обновляем кеш в фоновом режиме
 async function updateCache(request) {
-    if (request.method !== 'GET') return;
     try {
         const response = await fetch(request);
+
+        if (!response || !response.ok) return;
+
         const cache = await caches.open(CACHE_NAME);
         await cache.put(request, response.clone());
     } catch (e) { }

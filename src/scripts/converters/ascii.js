@@ -6,7 +6,7 @@ export default class ASCII extends ConverterBase {
     static name = 'ASCII';
     prefix = 'const char';
     ext = 'txt';
-    gray = true;
+    // gray = true;
     plainText = true;
 
     pallette = [
@@ -19,8 +19,8 @@ export default class ASCII extends ConverterBase {
     constructor() {
         super();
         this.ui
-            .addSelect('res', 'Resolution', ['8 char', '10 char', '70 char', '5 gray'], () => this.show())
-            .addSwitch('half', 'Half', true, () => this.show());
+            .addSelect('res', 'Resolution', ['8 char', '10 char', '70 char', '5 gray'])
+            .addSwitch('half', 'Half', true);
     }
 
     show() {

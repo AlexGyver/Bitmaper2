@@ -14,6 +14,10 @@ export default class ConverterBase {
     ui = ui_conv;
     img = new Matrix();
 
+    constructor() {
+        this.ui.onChange(() => this.show());
+    }
+
     click() { }
 
     getImg() {

@@ -40,7 +40,7 @@ module.exports = {
             {
                 test: /favicon.svg$/,
                 type: 'asset/inline',
-            },
+            }
         ]
     },
 

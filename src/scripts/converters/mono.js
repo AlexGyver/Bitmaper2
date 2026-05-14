@@ -3,11 +3,11 @@ import ConverterBase from "./base";
 import { threshold } from "./filters";
 
 class Mono extends ConverterBase {
-    gray = true;
+    // gray = true;
 
     constructor() {
         super();
-        this.ui.addSlider('thresh', 'Threshold', 128, 0, 256, 1, () => this.show())
+        this.ui.addSlider('thresh', 'Threshold', 128, 0, 256, 1)
     }
 
     getImg() {

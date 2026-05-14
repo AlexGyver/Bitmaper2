@@ -3,7 +3,7 @@ import ConverterBase from "./base";
 export default class Gray extends ConverterBase {
     static name = 'Grayscale';
     ext = 'gray';
-    gray = true;
+    // gray = true;
 
     async encode() {
         let img = this.getImg();

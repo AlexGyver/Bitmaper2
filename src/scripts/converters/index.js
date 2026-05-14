@@ -4,6 +4,7 @@ import { RGB233, RGB24, RGB565, RGB888 } from "./rgb";
 import Gray from "./gray";
 import { Test } from "./test";
 import ASCII from "./ascii";
+import { Trace } from "./trace";
 
 export let conv;
 
@@ -28,5 +29,6 @@ export let converters = [
     RGB565,
     RGB233,
     ASCII,
+    Trace,
     // Test,
 ];

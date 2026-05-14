@@ -13,6 +13,10 @@ export default class Matrix {
         return this.buf[y * this.W + x];
     }
 
+    getSafe(x, y) {
+        return x >= 0 && x < this.W && y >= 0 && y < this.H ? this.get(x, y) : 0;
+    }
+
     fill(v) {
         this.buf.fill(v);
     }
