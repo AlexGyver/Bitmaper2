@@ -5,6 +5,7 @@ import Gray from "./gray";
 import { Test } from "./test";
 import ASCII from "./ascii";
 import { Trace } from "./trace";
+import Bricks from "./bricks";
 
 export let conv;
 
@@ -29,6 +30,7 @@ export let converters = [
     RGB565,
     RGB233,
     ASCII,
+    Bricks,
     Trace,
     // Test,
 ];

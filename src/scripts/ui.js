@@ -5,6 +5,7 @@ import DragBlock from "@alexgyver/drag-block";
 import { app } from "./app";
 import { change_conv, conv, converters } from "./converters";
 import { clipWrite, decodeText, download, encodeText, fetchT, isTouch, LS } from "@alexgyver/utils";
+import { defaultImage } from "./defaultImage";
 
 /** @type {UI} */
 export let ui_in;
@@ -142,6 +143,8 @@ export function initUI() {
         ui_in.fromObject(cfg);
         saveCfg.forEach(id => ui_in.widget(id).call());
     }
+
+    loadFile(defaultImage);
 }
 
 //#region func

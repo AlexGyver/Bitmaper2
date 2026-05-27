@@ -1,28 +1,21 @@
 import { trace } from "../tracers/stroke";
 import { colors } from "../ui";
-import BaseMatrix from "./baseMatrix";
 import { threshold } from "./filters";
+import BaseThresh from "./baseThresh";
 
-export class Trace extends BaseMatrix {
+export class Trace extends BaseThresh {
     static name = 'Trace Stroke (beta)';
     points = [];
 
     constructor() {
         super();
         this.ui
-            .addSlider('thresh', 'Threshold', 128, 0, 256, 1)
             .addSlider('skipShort', 'Skip short', 0, 0, 10, 1)
             .addSwitch('skipCorners', 'Skip corners', false)
             .addSwitch('skipStraight', 'Skip straight', false)
             .addSlider('simplifyTol', 'Simplify', 0.0, 0, 2, 0.01)
             .addSlider('simplifyLen', 'Simplify length', 0.1, 0, 1, 0.01)
             .addSwitch('optiTravel', 'Optimize travel', false)
-    }
-
-    getImg() {
-        let img = this.img.copy();
-        threshold(img.buf, this.ui.thresh);
-        return img;
     }
 
     show() {
@@ -42,7 +35,7 @@ export class Trace extends BaseMatrix {
 
         let simplifyLen = Math.min(this.img.W, this.img.H) * this.ui.simplifyLen;
         this.points = trace(this.getImg(), { ...this.ui.toObject(), simplifyLen });
-        if (!this.points.length) return;console.log(this.points)
+        if (!this.points.length) return;
 
         cx.lineCap = 'round';
         cx.lineJoin = 'round';

@@ -1,6 +1,6 @@
-import { clipWrite, encodeText, roundInt } from "@alexgyver/utils";
+import { clipWrite, encodeText } from "@alexgyver/utils";
 import ConverterBase from "./base";
-import { colors } from "../ui";
+import { printMono } from "./utils";
 
 export default class ASCII extends ConverterBase {
     static name = 'ASCII';
@@ -23,38 +23,7 @@ export default class ASCII extends ConverterBase {
     }
 
     show() {
-        let cv = this.cv;
-        let cx = this.cx;
-
-        let rect = cv.getBoundingClientRect();
-        let w = rect.width;
-        let h = rect.height;
-        cv.width = w;
-        cv.height = h;
-
-        cx.fillStyle = colors.off;
-        cx.fillRect(0, 0, w, h);
-
-        let text = this.getText();
-        let lines = text.split("\n");
-        let fsize = h;
-        let lh = 1.3;
-        cx.font = fsize + "px monospace";
-        let wh = cx.measureText(lines[0]);
-        wh = [wh.width, fsize * lines.length * lh];
-        let scale = Math.min(w / wh[0], h / wh[1]);
-
-        fsize = roundInt(fsize * scale);
-        cx.font = fsize + "px monospace";
-        cx.textAlign = "center";
-        cx.textBaseline = "top";
-        cx.fillStyle = colors.on;
-
-        let y = 0;
-        for (const line of lines) {
-            cx.fillText(line, w / 2, y);
-            y += fsize * lh;
-        }
+        printMono(this.cv, this.cx, this.getText());
     }
 
     getText() {
@@ -66,9 +35,9 @@ export default class ASCII extends ConverterBase {
 
         for (let y = 0; y < img.H; y++) {
             for (let x = 0; x < img.W; x++) {
-                let pix = img.buf[y * img.W + x];
+                let pix = img.get(x, y);
                 if (half && y < img.H - 1) {
-                    pix = (pix + img.buf[(y + 1) * img.W + x]) / 2;
+                    pix = (pix + img.get(x, y + 1)) / 2;
                 }
                 res += pallette[((255 - pix) * (len - 1) / 255) << 0];
             }

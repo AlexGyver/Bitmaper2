@@ -1,6 +1,7 @@
 import Matrix from "../Matrix";
 import { app } from "../app";
 import { ui_conv, ui_out, ui_sel } from "../ui";
+import { grayscale } from "./filters";
 
 export default class ConverterBase {
     prefix = 'const uint8_t';
@@ -35,5 +36,5 @@ export default class ConverterBase {
     async encode() { }                      // получить бинарные данные
     getImg() { return this.img; }           // получить image Matrix
     getMeta() { return new Uint8Array(); }  // uint8array для добавления в начало bin
-    encodeColor(r, g, b) { return 0; }      // результат запишется в this.img.buf (UInt32 array)
+    encodeColor(r, g, b) { return 255 - grayscale(r, g, b); }      // результат запишется в this.img.buf (UInt32 array)
 }

@@ -25,6 +25,11 @@ export default async function loadImage(img) {
                 break;
 
             case 'string':
+                if (img.startsWith('data:image/') && img.includes(';base64,')) {
+                    image.src = img;
+                    name = 'bitmap';
+                    break;
+                }
                 if (!img.startsWith('http')) {
                     rej("Not a link");
                 }

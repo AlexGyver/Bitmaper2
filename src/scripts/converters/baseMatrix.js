@@ -1,7 +1,6 @@
 import { HEXtoRGB } from "@alexgyver/utils";
 import { colors, ui_in } from "../ui";
 import ConverterBase from "./base";
-import { grayscale } from "./filters";
 import { getWH16_LSB } from "./utils";
 
 export default class BaseMatrix extends ConverterBase {
@@ -73,10 +72,6 @@ export default class BaseMatrix extends ConverterBase {
 
     getMeta() {
         return new Uint8Array(getWH16_LSB(this.img.W, this.img.H));
-    }
-
-    encodeColor(r, g, b) {
-        return 255 - grayscale(r, g, b);
     }
 
     // цвет пикселя на preview
