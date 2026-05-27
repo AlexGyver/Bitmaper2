@@ -1,7 +1,7 @@
+import BaseMatrix from "./baseMatrix";
 import { HEXtoRGB, intToColor, rgbTo233, rgbTo565, rgbTo888 } from "@alexgyver/utils";
-import ConverterBase from "./base";
 
-export class RGB24 extends ConverterBase {
+export class RGB24 extends BaseMatrix {
     static name = 'RGB24';
     prefix = 'const uint32_t';
     ext = 'rgb24';
@@ -10,10 +10,10 @@ export class RGB24 extends ConverterBase {
         return Uint32Array.from(this.getImg().buf);
     }
 
-    _encodeColor(r, g, b) {
+    encodeColor(r, g, b) {
         return rgbTo888(r, g, b);
     }
-    _decodeColor(v) {
+    showColor(v) {
         return intToColor(v);
     }
 }
@@ -29,7 +29,7 @@ export class RGB888 extends RGB24 {
     }
 }
 
-export class RGB565 extends ConverterBase {
+export class RGB565 extends BaseMatrix {
     static name = 'RGB565';
     prefix = 'const uint16_t';
     ext = 'rgb565';
@@ -38,15 +38,15 @@ export class RGB565 extends ConverterBase {
         return Uint16Array.from(this.getImg().buf);
     }
 
-    _encodeColor(r, g, b) {
+    encodeColor(r, g, b) {
         return rgbTo565(r, g, b);
     }
-    _decodeColor(v) {
+    showColor(v) {
         return intToColor(((v & 0b1111100000000000) << 8) | ((v & 0b11111100000) << 5) | ((v & 0b11111) << 3));
     }
 }
 
-export class RGB233 extends ConverterBase {
+export class RGB233 extends BaseMatrix {
     static name = 'RGB233';
     ext = 'rgb233';
 
@@ -54,10 +54,10 @@ export class RGB233 extends ConverterBase {
         return Uint8Array.from(this.getImg().buf);
     }
 
-    _encodeColor(r, g, b) {
+    encodeColor(r, g, b) {
         return rgbTo233(r, g, b);
     }
-    _decodeColor(v) {
+    showColor(v) {
         return intToColor(((v & 0b11000000) << 16) | ((v & 0b111000) << 10) | ((v & 0b111) << 5));
     }
 }

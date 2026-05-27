@@ -1,4 +1,4 @@
-import { encodeText, roundInt } from "@alexgyver/utils";
+import { clipWrite, encodeText, roundInt } from "@alexgyver/utils";
 import ConverterBase from "./base";
 import { colors } from "../ui";
 
@@ -6,8 +6,6 @@ export default class ASCII extends ConverterBase {
     static name = 'ASCII';
     prefix = 'const char';
     ext = 'txt';
-    // gray = true;
-    plainText = true;
 
     pallette = [
         "Wwli:,. ",
@@ -20,7 +18,8 @@ export default class ASCII extends ConverterBase {
         super();
         this.ui
             .addSelect('res', 'Resolution', ['8 char', '10 char', '70 char', '5 gray'])
-            .addSwitch('half', 'Half', true);
+            .addSwitch('half', 'Half', true)
+            .addButton('copy', 'Copy text', () => clipWrite(this.getText()))
     }
 
     show() {
@@ -83,3 +82,18 @@ export default class ASCII extends ConverterBase {
         return encodeText(this.getText());
     }
 }
+
+/*
+if (conv.plainText) {
+    if (Array.isArray(res)) res = res[0];   // todo
+    let w = conv.img.W;
+    let lines = decodeText(res).split("\n");
+    let h = lines.length;
+    let code = header(`${res.byteLength} bytes`, w, h);
+    code += `${conv.prefix} ${name}[] ${pgm}=\n`;
+    code += lines.map(line => `\t"${line.replace(/"/g, '\\"')}\\n"`).join("\n");
+    code = code.slice(0, -3);
+    code += '";';
+    return code;
+}
+*/

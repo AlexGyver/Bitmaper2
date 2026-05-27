@@ -1,10 +1,9 @@
 import { colors } from "../ui";
-import ConverterBase from "./base";
+import BaseMatrix from "./baseMatrix";
 import { threshold } from "./filters";
+import { getWH16_LSB } from "./utils";
 
-class Mono extends ConverterBase {
-    // gray = true;
-
+class Mono extends BaseMatrix {
     constructor() {
         super();
         this.ui.addSlider('thresh', 'Threshold', 128, 0, 256, 1)
@@ -24,7 +23,7 @@ class Mono extends ConverterBase {
         this.show();
     }
 
-    _decodeColor(v) {
+    showColor(v) {
         return v ? colors.on : 0;
     }
 }
@@ -168,7 +167,7 @@ export class MonoGMap extends Mono {
     }
 
     static make(m) {
-        return [(m.W & 0xff), ((m.W >> 8) & 0xff), (m.H & 0xff), ((m.H >> 8) & 0xff)].concat(Mono8Vcol.make(m));
+        return getWH16_LSB(m.W, m.H).concat(Mono8Vcol.make(m));
     }
 }
 
@@ -182,7 +181,7 @@ export class MonoGPack extends Mono {
     }
 
     static make(m) {
-        let data = [(m.W & 0xff), (m.W >> 8) & 0xff, (m.H & 0xff), (m.H >> 8) & 0xff];
+        let data = getWH16_LSB(m.W, m.H);
         let i = 0, value = 0, shift = 0;
 
         let push = () => {

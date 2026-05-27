@@ -2,7 +2,7 @@ export default class Matrix {
     resize(w, h) {
         this.W = w;
         this.H = h;
-        this.buf = new Int32Array(w * h);
+        this.buf = new Uint32Array(w * h);
     }
 
     set(x, y, v) {
@@ -29,7 +29,7 @@ export default class Matrix {
         let t = new Matrix();
         t.W = this.W;
         t.H = this.H;
-        t.buf = new Int32Array(this.buf);
+        t.buf = new Uint32Array(this.buf);
         return t;
     }
 }

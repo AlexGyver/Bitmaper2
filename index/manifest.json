@@ -3,8 +3,8 @@
     "background_color": "#1C2128",
     "display": "standalone",
     "start_url": ".",
-    "name": "Bitmaper2",
-    "short_name": "Bitmaper2",
+    "name": "Bitmaper",
+    "short_name": "Bitmaper",
     "description": "An app to convert images to bitmaps",
     "orientation": "portrait",
     "icons": [

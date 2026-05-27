@@ -86,7 +86,6 @@ main {
     padding: 10px;
     padding-top: 45px;
     box-sizing: border-box;
-    overscroll-behavior: none;
 }
 
 .ui_in::-webkit-scrollbar,

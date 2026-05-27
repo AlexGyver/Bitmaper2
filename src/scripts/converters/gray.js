@@ -1,12 +1,10 @@
-import ConverterBase from "./base";
+import BaseMatrix from "./baseMatrix";
 
-export default class Gray extends ConverterBase {
+export default class Gray extends BaseMatrix {
     static name = 'Grayscale';
     ext = 'gray';
-    // gray = true;
 
     async encode() {
-        let img = this.getImg();
-        return Uint8Array.from(img.buf);
+        return Uint8Array.from(this.getImg().buf);
     }
 }
