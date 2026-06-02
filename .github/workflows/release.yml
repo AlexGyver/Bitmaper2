@@ -1,0 +1,148 @@
+name: Build Desktop Apps on Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-tauri:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-2022
+            name: windows
+            node: 22
+
+          - platform: macos-14
+            name: macos
+            node: 22
+            args: --target universal-apple-darwin
+
+          - platform: ubuntu-22.04
+            name: linux
+            node: 22
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.name == 'macos' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Install Linux dependencies
+        if: matrix.name == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libssl-dev
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build Tauri app
+        run: npm run tauri_build -- ${{ matrix.args }}
+
+      - name: Prepare Windows EXE
+        if: matrix.name == 'windows'
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem "src-tauri/target/release" -Filter "*.exe" |
+            Where-Object { $_.Name -notlike "*setup*" } |
+            Select-Object -First 1
+
+          if (-not $exe) {
+            throw "No release .exe found in src-tauri/target/release"
+          }
+
+          $out = "Bitmaper2-${{ github.event.release.tag_name }}-windows-x64.exe"
+          Copy-Item $exe.FullName $out
+
+      - name: Prepare macOS artifacts
+        if: matrix.name == 'macos'
+        shell: bash
+        run: |
+          mkdir -p artifacts
+
+          find src-tauri/target -name "*.dmg" -exec cp {} artifacts/ \;
+
+          if [ -d "src-tauri/target/universal-apple-darwin/release/bundle/macos" ]; then
+            find src-tauri/target/universal-apple-darwin/release/bundle/macos -name "*.app" -maxdepth 1 -print0 | while IFS= read -r -d '' app; do
+              tar -czf "artifacts/$(basename "$app" .app)-${{ github.event.release.tag_name }}-macos-universal.app.tar.gz" -C "$(dirname "$app")" "$(basename "$app")"
+            done
+          fi
+
+          if [ -z "$(ls -A artifacts)" ]; then
+            echo "No macOS artifacts found"
+            find src-tauri/target -maxdepth 6 -type f
+            exit 1
+          fi
+
+      - name: Prepare Linux artifacts
+        if: matrix.name == 'linux'
+        shell: bash
+        run: |
+          mkdir -p artifacts
+
+          find src-tauri/target -name "*.AppImage" -exec cp {} artifacts/ \;
+          find src-tauri/target -name "*.deb" -exec cp {} artifacts/ \;
+          find src-tauri/target -name "*.rpm" -exec cp {} artifacts/ \;
+
+          if [ -z "$(ls -A artifacts)" ]; then
+            bin="$(find src-tauri/target/release -maxdepth 1 -type f -executable | head -n 1)"
+            if [ -n "$bin" ]; then
+              cp "$bin" "artifacts/Bitmaper2-${{ github.event.release.tag_name }}-linux-x64"
+            else
+              echo "No Linux artifacts found"
+              find src-tauri/target -maxdepth 6 -type f
+              exit 1
+            fi
+          fi
+
+      - name: Upload Windows EXE to GitHub Release
+        if: matrix.name == 'windows'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Bitmaper2-${{ github.event.release.tag_name }}-windows-x64.exe
+          tag_name: ${{ github.event.release.tag_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload macOS artifacts to GitHub Release
+        if: matrix.name == 'macos'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          tag_name: ${{ github.event.release.tag_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux artifacts to GitHub Release
+        if: matrix.name == 'linux'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          tag_name: ${{ github.event.release.tag_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

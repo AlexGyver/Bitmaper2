@@ -1,3 +1,3 @@
-- npm install -D @tauri-apps/cli
-- npx tauri init
-- npm run tauri icon path/to/app-icon.png
+- `npm install -D @tauri-apps/cli`
+- `npx tauri init`
+- `npm run tauri icon path/to/app-icon.png`
