@@ -1,9 +1,8 @@
 name: Build Windows EXE on Release
 
 on:
-  workflow_dispatch:
   release:
-    types: [created]
+    types: [published]
 
 permissions:
   contents: write
