@@ -1,6 +1,6 @@
 import { intToColor } from "@alexgyver/utils";
 import { RGB24 } from "./rgb";
-import { ditherRgbAtkinson, ditherRgbBayer, ditherRgbBurkes, ditherRgbFS, ditherRgbJJN, ditherRgbSierra2, ditherRgbSierra3, ditherRgbSierraLite, ditherRgbStucki } from "../filters/ditherRgb";
+import { ditherRgbAtkinson, ditherRgbBayer, ditherRgbBurkes, ditherRgbFS, ditherRgbJJN, ditherRgbSierra2, ditherRgbSierra3, ditherRgbSierraLite, ditherRgbStucki } from "../filters/ditherRGB";
 
 const maxCols = 10;
 const defPal = [

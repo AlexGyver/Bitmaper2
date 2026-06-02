@@ -1,4 +1,4 @@
-import { clamp255 } from "../math";
+import { clamp, clamp255 } from "../math";
 
 //#region rgbToGray
 export function rgbToGray(r, g, b) {
@@ -36,19 +36,21 @@ export function gamma(arr, w, h, value = 1.0) {
     }
 }
 
-//#region brightness
+//#region offset
 // value [-255.. 255]
-export function brightness(arr, w, h, value = 0) {
+export function offset(arr, w, h, value = 0) {
     for (let i = 0; i < arr.length; i++) {
         arr[i] = clamp255(arr[i] + value);
     }
 }
 
-//#region gain
-// value [0.0.. 3.0]
-export function gain(arr, w, h, value = 1.0) {
+//#region brightness
+// value [-255.. 255]
+export function brightness(arr, w, h, value = 0) {
+    const amount = 1 + clamp(value, -255, 255) / 255;
+
     for (let i = 0; i < arr.length; i++) {
-        arr[i] = clamp255(arr[i] * value);
+        arr[i] = clamp255(arr[i] * amount);
     }
 }
 

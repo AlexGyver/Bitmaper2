@@ -1,4 +1,4 @@
-import { clamp255 } from "../math";
+import { clamp, clamp255 } from "../math";
 
 //#region mirrorIData
 export function mirrorIData(idata, mx, my) {
@@ -36,9 +36,9 @@ export function balanceIData(idata, r = 1, g = 1, b = 1) {
     }
 }
 
-//#region brightnessIData
+//#region offsetIData
 // value [-255.. 255]
-export function brightnessIData(idata, value = 0) {
+export function offsetIData(idata, value = 0) {
     const data = idata.data;
 
     for (let i = 0; i < data.length; i += 4) {
@@ -47,6 +47,21 @@ export function brightnessIData(idata, value = 0) {
         data[i + 0] = data[i + 0] + value;
         data[i + 1] = data[i + 1] + value;
         data[i + 2] = data[i + 2] + value;
+    }
+}
+
+//#region brightnessIData
+// value [-255.. 255]
+export function brightnessIData(idata, value = 0) {
+    const data = idata.data;
+    const amount = 1 + clamp(value, -255, 255) / 255;
+
+    for (let i = 0; i < data.length; i += 4) {
+        if (!data[i + 3]) continue;
+
+        data[i + 0] = data[i + 0] * amount;
+        data[i + 1] = data[i + 1] * amount;
+        data[i + 2] = data[i + 2] * amount;
     }
 }
 
