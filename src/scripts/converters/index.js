@@ -1,11 +1,17 @@
 import { ui_conv, ui_out, update_h } from "../ui";
-import { Mono1, Mono8HMSB, Mono8HLSB, Mono8Vcol, Mono8Vrow, MonoGImg, MonoGMap, MonoGPack } from "./mono";
+import { Mono1p, Mono8HMSB, Mono8HLSB, Mono8Vcol, Mono8Vrow, MonoGImg, MonoGMap, MonoGPack } from "./mono";
 import { RGB233, RGB24, RGB565, RGB888 } from "./rgb";
 import Gray from "./gray";
-import { Test } from "./test";
 import ASCII from "./ascii";
-import { Trace } from "./trace";
 import Bricks from "./bricks";
+import { TraceStroke } from "./TraceStroke";
+import { TraceContour } from "./TraceContour";
+import { TraceSkeleton } from "./TraceSkeleton";
+import { DitherRGB } from "./dither";
+import { TraceHatch } from "./TraceHatch";
+import { TracePaths } from "./TracePaths";
+import { TraceScribble } from "./TraceScribble";
+import { TraceWave } from "./TraceWave";
 
 export let conv;
 
@@ -16,21 +22,27 @@ export function change_conv(n) {
 }
 
 export let converters = [
-    Mono1,
+    TraceWave,
+    TracePaths,
+    TraceHatch,
+    TraceScribble,
+    Mono1p,
     Mono8HLSB,
     Mono8HMSB,
     Mono8Vcol,
     Mono8Vrow,
-    MonoGImg,
-    MonoGMap,
-    MonoGPack,
+    ASCII,
+    Bricks,
+    // MonoGImg,
+    // MonoGMap,
+    // MonoGPack,
     Gray,
     RGB24,
     RGB888,
     RGB565,
     RGB233,
-    ASCII,
-    Bricks,
-    Trace,
-    // Test,
+    DitherRGB,
+    TraceStroke,
+    TraceContour,
+    TraceSkeleton,
 ];

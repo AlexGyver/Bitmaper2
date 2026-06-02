@@ -1,68 +1,46 @@
-import { clipWrite, encodeText } from "@alexgyver/utils";
-import ConverterBase from "./base";
-import { printMono } from "./utils";
+import BaseText from "./baseText";
 
-export default class ASCII extends ConverterBase {
+export default class ASCII extends BaseText {
     static name = 'ASCII';
-    prefix = 'const char';
-    ext = 'txt';
 
-    pallette = [
+    palette = [
         "Wwli:,. ",
         "@%#*+=-:. ",
-        "@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/|\()1{}[]?-_+~<>i!lI;:,\"^`'. ",
+        "@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/|\\()1{}[]?-_+~<>i!lI;:,\"^`'. ",
         "█▓▒░ "
     ];
 
     constructor() {
-        super();
+        super('gray');
         this.ui
             .addSelect('res', 'Resolution', ['8 char', '10 char', '70 char', '5 gray'])
             .addSwitch('half', 'Half', true)
-            .addButton('copy', 'Copy text', () => clipWrite(this.getText()))
-    }
-
-    show() {
-        printMono(this.cv, this.cx, this.getText());
     }
 
     getText() {
-        let img = this.getImg();
-        let pallette = this.pallette[this.ui.res];
-        let len = pallette.length;
-        let half = this.ui.half;
-        let res = "";
+        const palette = this.palette[this.ui.res];
+        const len = palette.length;
+        const half = this.ui.half;
+        const stepY = half ? 2 : 1;
+        const lines = [];
 
-        for (let y = 0; y < img.H; y++) {
-            for (let x = 0; x < img.W; x++) {
-                let pix = img.get(x, y);
-                if (half && y < img.H - 1) {
-                    pix = (pix + img.get(x, y + 1)) / 2;
+        for (let y = 0; y < this.H; y += stepY) {
+            let line = "";
+
+            for (let x = 0; x < this.W; x++) {
+                let pix = this.getPix(x, y);
+
+                if (half && y + 1 < this.H) {
+                    pix = (pix + this.getPix(x, y + 1)) / 2;
                 }
-                res += pallette[((255 - pix) * (len - 1) / 255) << 0];
+
+                const idx = Math.floor((255 - pix) * (len - 1) / 255);
+                line += palette[idx];
             }
-            if (half) y++;
-            if (y < img.H - 1) res += '\n';
+
+            lines.push(line);
         }
-        return res;
-    }
 
-    async encode() {
-        return encodeText(this.getText());
+        return lines.join('\n');
     }
 }
-
-/*
-if (conv.plainText) {
-    if (Array.isArray(res)) res = res[0];   // todo
-    let w = conv.img.W;
-    let lines = decodeText(res).split("\n");
-    let h = lines.length;
-    let code = header(`${res.byteLength} bytes`, w, h);
-    code += `${conv.prefix} ${name}[] ${pgm}=\n`;
-    code += lines.map(line => `\t"${line.replace(/"/g, '\\"')}\\n"`).join("\n");
-    code = code.slice(0, -3);
-    code += '";';
-    return code;
-}
-*/

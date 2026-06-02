@@ -1,52 +1,92 @@
-export default async function loadImage(img) {
-    return new Promise((res, rej) => {
-        let name;
-        let image = new Image();
+export default async function loadImage(val) {
+    return new Promise((resolve, reject) => {
+        let name = 'bitmap';
+        let objectUrl = '';
 
-        image.crossOrigin = "Anonymous";
+        const image = new Image();
+
+        const cleanup = () => {
+            if (objectUrl) {
+                URL.revokeObjectURL(objectUrl);
+                objectUrl = '';
+            }
+        };
+
         image.addEventListener('load', () => {
-            if (image.width && image.height) {
-                res({ image: image, name: name });
+            cleanup();
+
+            if (image.naturalWidth && image.naturalHeight) {
+                resolve({ image, name });
             } else {
-                rej("Image error");
+                reject(new Error("Image error"));
             }
         });
+
         image.addEventListener('error', () => {
-            rej("Image load error");
+            cleanup();
+            reject(new Error("Image load error"));
         });
 
-        switch (typeof img) {
-            case 'object':
-                if (!img.type.toString().includes('image')) {
-                    rej("Not an image");
+        switch (typeof val) {
+            case 'object': {
+                if (!(val instanceof Blob) || !val.type.startsWith('image/')) {
+                    return reject(new Error("Not an image"));
                 }
-                image.src = URL.createObjectURL(img);
-                name = _getName(img.name);
-                break;
 
-            case 'string':
-                if (img.startsWith('data:image/') && img.includes(';base64,')) {
-                    image.src = img;
+                objectUrl = URL.createObjectURL(val);
+                image.src = objectUrl;
+                name = _getName(val.name || 'bitmap');
+                break;
+            }
+
+            case 'string': {
+                if (val.startsWith('data:image/') && val.includes(';base64,')) {
+                    image.src = val;
                     name = 'bitmap';
                     break;
                 }
-                if (!img.startsWith('http')) {
-                    rej("Not a link");
+
+                if (!/^https?:\/\//i.test(val)) {
+                    return reject(new Error("Not a link"));
                 }
-                image.src = img;
-                name = _getName(img);
+
+                image.crossOrigin = "anonymous";
+                image.src = val;
+                name = _getNameFromUrl(val);
                 break;
+            }
 
             default:
-                rej("Image error");
-                break;
+                return reject(new Error("Image error"));
         }
     });
 }
 
-function _getName(str) {
-    str = str.substring(str.lastIndexOf('/') + 1, str.lastIndexOf('.')).replaceAll('-', '_').replaceAll(' ', '_').substring(0, 10);
-    if (!str.length) str = 'bitmap';
-    else if (str[0] >= '0' && str[0] <= '9') str = 'b' + str;
-    return str;
+function _getNameFromUrl(url) {
+    try {
+        const u = new URL(url);
+        return _getName(u.pathname);
+    } catch {
+        return _getName(url);
+    }
+}
+
+function _getName(str = '') {
+    let base = String(str).split('/').pop() || 'bitmap';
+
+    const dot = base.lastIndexOf('.');
+    if (dot > 0) base = base.slice(0, dot);
+
+    base = base
+        .replaceAll('-', '_')
+        .replaceAll(' ', '_')
+        .replace(/[^\w]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .slice(0, 10);
+
+    if (!base) base = 'bitmap';
+    else if (/^\d/.test(base)) base = 'b' + base;
+
+    return base;
 }

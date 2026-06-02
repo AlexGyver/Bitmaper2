@@ -1,0 +1,55 @@
+name: Build Windows EXE on Release
+
+on:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows-exe:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build Tauri app
+        run: npm run tauri_build
+
+      - name: Rename EXE
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem "src-tauri/target/release" -Filter "*.exe" |
+            Where-Object { $_.Name -notlike "*setup*" } |
+            Select-Object -First 1
+
+          if (-not $exe) {
+            throw "No release .exe found in src-tauri/target/release"
+          }
+
+          $out = "Bitmaper2-${{ github.event.release.tag_name }}-windows-x64.exe"
+          Copy-Item $exe.FullName $out
+
+          echo "EXE_PATH=$out" >> $env:GITHUB_ENV
+
+      - name: Upload EXE to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.EXE_PATH }}
+          tag_name: ${{ github.event.release.tag_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

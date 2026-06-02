@@ -1,31 +1,40 @@
-import { HEXtoRGB } from "@alexgyver/utils";
-import { colors, ui_in } from "../ui";
 import ConverterBase from "./base";
+import { colorToArray, intToColor } from "@alexgyver/utils";
+import { colors, ui_in } from "../ui";
 import { getWH16_LSB } from "./utils";
 
 export default class BaseMatrix extends ConverterBase {
+    constructor(mode = 'mono') {
+        super(mode);
+    }
+
     show() {
         this.log('');
 
-        let img = this.getImg();
-        let grid = Math.ceil(this.cv.clientWidth / img.W);
+        const W = this.W;
+        const H = this.H;
+        const ablk = this.activeBlack;
+        let buf = this.getBuf();
+        if (!W || !H || !buf.length) return;
+
+        const decode = decoders[this.mode];
+        const grid = Math.max(1, Math.ceil(this.cv.clientWidth / W));
 
         if (grid > 1) {
-            let w = this.cv.width = grid * img.W;
-            let h = this.cv.height = grid * img.H;
+            let w = this.cv.width = grid * W;
+            let h = this.cv.height = grid * H;
 
             const cx = this.cx;
             cx.fillStyle = colors.off;
             cx.fillRect(0, 0, w, h);
 
-            for (let i = 0, x = 0, y = 0; i < img.buf.length; i++) {
-                let v = img.buf[i];
-                v = this.showColor(v);
+            for (let i = 0, x = 0, y = 0; i < buf.length; i++) {
+                let v = decode(buf[i], ablk);
                 if (v) {
                     cx.fillStyle = v;
                     cx.fillRect(x * grid, y * grid, grid, grid);
                 }
-                if (++x == img.W) {
+                if (++x == W) {
                     x = 0;
                     ++y;
                 }
@@ -36,34 +45,34 @@ export default class BaseMatrix extends ConverterBase {
                 cx.lineWidth = grid * ui_in.proc_grid;
                 cx.beginPath();
 
-                for (let x = 1; x <= img.W - 1; x++) {
+                for (let x = 1; x <= W - 1; x++) {
                     cx.moveTo(x * grid, 0);
-                    cx.lineTo(x * grid, img.H * grid);
+                    cx.lineTo(x * grid, H * grid);
                 }
-                for (let y = 1; y <= img.H - 1; y++) {
+                for (let y = 1; y <= H - 1; y++) {
                     cx.moveTo(0, y * grid);
-                    cx.lineTo(img.W * grid, y * grid);
+                    cx.lineTo(W * grid, y * grid);
                 }
 
                 cx.stroke();
             }
         } else {
-            this.cv.width = img.W;
-            this.cv.height = img.H;
+            this.cv.width = W;
+            this.cv.height = H;
 
             this.cx.fillStyle = colors.off;
-            this.cx.fillRect(0, 0, img.W, img.H);
+            this.cx.fillRect(0, 0, W, H);
 
-            let idata = this.cx.getImageData(0, 0, img.W, img.H);
+            let idata = this.cx.getImageData(0, 0, W, H);
             let data = idata.data;
             for (let i = 0, j = 0; i < data.length; i += 4, j++) {
-                let col = this.showColor(img.buf[j]);
+                let col = decode(buf[j], ablk);
                 if (col) {
-                    let rgb = HEXtoRGB(parseInt(col.slice(1, 7), 16));
+                    let rgb = colorToArray(col);
                     data[i + 0] = rgb[0];
                     data[i + 1] = rgb[1];
                     data[i + 2] = rgb[2];
-                    data[i + 3] = (col.length > 7) ? parseInt(col.slice(7, 9), 16) : 255;
+                    data[i + 3] = rgb[3];
                 }
             }
             this.cx.putImageData(idata, 0, 0);
@@ -71,11 +80,12 @@ export default class BaseMatrix extends ConverterBase {
     }
 
     getMeta() {
-        return new Uint8Array(getWH16_LSB(this.img.W, this.img.H));
-    }
-
-    // цвет пикселя на preview
-    showColor(v) {
-        return v ? (colors.on + v.toString(16).padStart(2, 0)) : 0;
+        return new Uint8Array(getWH16_LSB(this.W, this.H));
     }
 }
+
+const decoders = {
+    rgb: (c) => intToColor(c),
+    gray: (c, ablk) => { if (ablk) c = 255 - c; return c ? (colors.on + c.toString(16).padStart(2, '0')) : 0 },
+    mono: (c, ablk) => (ablk ? 255 - c : c) ? colors.on : 0,
+};

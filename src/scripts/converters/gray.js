@@ -4,7 +4,11 @@ export default class Gray extends BaseMatrix {
     static name = 'Grayscale';
     ext = 'gray';
 
-    async encode() {
-        return Uint8Array.from(this.getImg().buf);
+    constructor() {
+        super('gray');
+    }
+
+    encode() {
+        return this.buf;
     }
 }

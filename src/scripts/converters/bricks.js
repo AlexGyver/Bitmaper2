@@ -1,87 +1,93 @@
-import { clipWrite } from "@alexgyver/utils";
-import BaseThresh from "./baseThresh";
-import { printMono } from "./utils";
+import BaseText from "./baseText";
 
-export default class Bricks extends BaseThresh {
+export default class Bricks extends BaseText {
     static name = 'Bricks';
-    prefix = 'const char';
-    ext = 'txt';
 
     constructor() {
-        super();
-        this.ui
-            .addSelect('res', 'Resolution', ['X1', 'X2', 'X4', 'X8'])
-            .addButton('copy', 'Copy text', () => clipWrite(this.getText()))
+        super('mono');
+        this.ui.addSelect('res', 'Resolution', ['X1', 'X2', 'X4', 'X8']);
     }
 
-    show() {
-        printMono(this.cv, this.cx, this.getText());
+    isSet(x, y) {
+        return this.getPixSafe(x, y) < 128 ? 0 : 1;
     }
 
     getText() {
-        let img = this.getImg();
-        let res = "";
+        const lines = [];
 
         switch (this.ui.resText) {
             case 'X1':
-                for (let y = 0; y < img.H; y++) {
-                    for (let x = 0; x < img.W; x++) {
-                        res += img.get(x, y) ? "⬛" : "⬜";
+                for (let y = 0; y < this.H; y++) {
+                    let line = "";
+
+                    for (let x = 0; x < this.W; x++) {
+                        line += this.isSet(x, y) ? "⬛" : "⬜";
                     }
-                    res += "\n";
+
+                    lines.push(line);
                 }
                 break;
 
             case 'X2':
-                for (let y = 0; y < img.H; y += 2) {
-                    for (let x = 0; x < img.W; x++) {
-                        let v = !!img.get(x, y) | (!!img.get(x, y + 1) << 1);
-                        res += ["⠀", "▀", "▄", "█"][v];
+                for (let y = 0; y < this.H; y += 2) {
+                    let line = "";
+
+                    for (let x = 0; x < this.W; x++) {
+                        const v = this.isSet(x, y) | (this.isSet(x, y + 1) << 1);
+                        line += ["⠀", "▀", "▄", "█"][v];
                     }
-                    res += "\n";
+
+                    lines.push(line);
                 }
                 break;
 
             case 'X4':
-                for (let y = 0; y < img.H; y += 2) {
-                    for (let x = 0; x < img.W; x += 2) {
-                        let v = !!img.get(x, y) | (!!img.get(x + 1, y) << 1) | (!!img.get(x, y + 1) << 2) | (!!img.get(x + 1, y + 1) << 3);
-                        res += ["⠀", "▘", "▝", "▀", "▖", "▌", "▞", "▛", "▗", "▚", "▐", "▜", "▄", "▙", "▟", "█"][v];
+                for (let y = 0; y < this.H; y += 2) {
+                    let line = "";
+
+                    for (let x = 0; x < this.W; x += 2) {
+                        const v = this.isSet(x, y) | (this.isSet(x + 1, y) << 1) | (this.isSet(x, y + 1) << 2) | (this.isSet(x + 1, y + 1) << 3);
+                        line += ["⠀", "▘", "▝", "▀", "▖", "▌", "▞", "▛", "▗", "▚", "▐", "▜", "▄", "▙", "▟", "█"][v];
                     }
-                    res += "\n";
+
+                    lines.push(line);
                 }
                 break;
 
             case 'X8':
-                for (let yy = 0; yy < img.H; yy += 4) {
-                    for (let xx = 0; xx < img.W; xx += 2) {
+                for (let yy = 0; yy < this.H; yy += 4) {
+                    let line = "";
+
+                    for (let xx = 0; xx < this.W; xx += 2) {
                         let v = 0;
+
                         for (let k = 0; k < 8; k++) {
-                            let x = xx, y = yy;
+                            let x = xx;
+                            let y = yy;
+
                             if (k <= 2) {
                                 y += k;
                             } else if (k <= 5) {
                                 x++;
                                 y += k - 3;
-                            } else if (k == 6) {
+                            } else if (k === 6) {
                                 y += 3;
                             } else {
-                                y += 3;
                                 x++;
+                                y += 3;
                             }
-                            v = (v >> 1) | (!!img.get(x, y) << 7);
+
+                            v = (v >> 1) | (this.isSet(x, y) << 7);
                         }
-                        res += String.fromCharCode(0x2800 + v);
+
+                        line += String.fromCharCode(0x2800 + v);
                     }
-                    res += "\n";
+
+                    lines.push(line);
                 }
                 break;
         }
 
-        return res;
-    }
-
-    async encode() {
-        return encodeText(this.getText());
+        return lines.join('\n');
     }
 }

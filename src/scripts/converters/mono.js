@@ -1,59 +1,46 @@
-import { colors } from "../ui";
 import BaseMatrix from "./baseMatrix";
-import { threshold } from "./filters";
 import { getWH16_LSB } from "./utils";
 
-class Mono extends BaseMatrix {
+class MonoBase extends BaseMatrix {
     constructor() {
-        super();
-        this.ui.addSlider('thresh', 'Threshold', 128, 0, 256, 1)
-    }
-
-    getImg() {
-        let img = this.img.copy();
-        threshold(img.buf, this.ui.thresh);
-        return img;
+        super('mono');
     }
 
     click(x, y) {
-        if (this.cv.clientWidth / this.img.W < 2) return;
-        x = Math.floor(x * this.img.W);
-        y = Math.floor(y * this.img.H);
-        this.img.set(x, y, 255 - this.img.get(x, y));
+        if (this.cv.clientWidth / this.W < 2) return;
+        x = Math.floor(x * this.W);
+        y = Math.floor(y * this.H);
+        let i = y * this.W + x;
+        this.buf[i] = 255 - this.buf[i];
         this.show();
-    }
-
-    showColor(v) {
-        return v ? colors.on : 0;
     }
 }
 
-export class Mono1 extends Mono {
+export class Mono1p extends MonoBase {
     static name = '1 pix/byte';
     ext = '1p';
 
-    async encode() {
-        return Uint8Array.from(this.getImg().buf.map(x => x ? 1 : 0));
+    encode() {
+        return Uint8Array.from(this.buf.map(x => x ? 1 : 0));
     }
 }
 
-export class Mono8HLSB extends Mono {
+export class Mono8HLSB extends MonoBase {
     static name = '8x Horizontal';
     ext = '8h';
 
-    async encode() {
-        let m = this.getImg();
+    encode() {
         let data = [];
-        let chunk = Math.ceil(m.W / 8);
+        let chunk = Math.ceil(this.W / 8);
 
-        for (let y = 0; y < m.H; y++) {
+        for (let y = 0; y < this.H; y++) {
             for (let xx = 0; xx < chunk; xx++) {
                 let byte = 0;
                 for (let b = 0; b < 8; b++) {
                     byte >>= 1;
 
                     let x = xx * 8 + b;
-                    if (x < m.W && m.get(x, y)) {
+                    if (x < this.W && this.getPix(x, y)) {
                         byte |= 1 << 7;
                     }
                 }
@@ -64,23 +51,22 @@ export class Mono8HLSB extends Mono {
     }
 }
 
-export class Mono8HMSB extends Mono {
+export class Mono8HMSB extends MonoBase {
     static name = '8x Horizontal MSB';
-    ext = '8h';
+    ext = '8hm';
 
-    async encode() {
-        let m = this.getImg();
+    encode() {
         let data = [];
-        let chunk = Math.ceil(m.W / 8);
+        let chunk = Math.ceil(this.W / 8);
 
-        for (let y = 0; y < m.H; y++) {
+        for (let y = 0; y < thisthis.H; y++) {
             for (let xx = 0; xx < chunk; xx++) {
                 let byte = 0;
                 for (let b = 0; b < 8; b++) {
                     byte <<= 1;
 
                     let x = xx * 8 + b;
-                    if (x < m.W && m.get(x, y)) {
+                    if (x < this.W && this.getPix(x, y)) {
                         byte |= 1;
                     }
                 }
@@ -91,24 +77,24 @@ export class Mono8HMSB extends Mono {
     }
 }
 
-export class Mono8Vcol extends Mono {
+export class Mono8Vcol extends MonoBase {
     static name = '8x Vertical Col';
     ext = '8vc';
 
-    async encode() {
-        return Uint8Array.from(Mono8Vcol.make(this.getImg()));
+    encode() {
+        return Uint8Array.from(Mono8Vcol.make(this.buf, this.w, this.h));
     }
 
-    static make(m) {
+    static make(buf, w, h) {
         let data = [];
-        let chunk = Math.ceil(m.H / 8);
-        for (let x = 0; x < m.W; x++) {
+        let chunk = Math.ceil(h / 8);
+        for (let x = 0; x < w; x++) {
             for (let yy = 0; yy < chunk; yy++) {
                 let byte = 0;
                 for (let b = 0; b < 8; b++) {
                     byte >>= 1;
                     let y = yy * 8 + b;
-                    if (y < m.H && m.get(x, y)) {
+                    if (y < h && buf[y * w + h]) {
                         byte |= 1 << 7;
                     }
                 }
@@ -119,21 +105,20 @@ export class Mono8Vcol extends Mono {
     }
 }
 
-export class Mono8Vrow extends Mono {
+export class Mono8Vrow extends MonoBase {
     static name = '8x Vertical Row';
     ext = '8vr';
 
-    async encode() {
-        let m = this.getImg();
+    encode() {
         let data = [];
-        let chunk = Math.ceil(m.H / 8);
+        let chunk = Math.ceil(this.H / 8);
         for (let yy = 0; yy < chunk; yy++) {
-            for (let x = 0; x < m.W; x++) {
+            for (let x = 0; x < this.W; x++) {
                 let byte = 0;
                 for (let b = 0; b < 8; b++) {
                     byte >>= 1;
                     let y = yy * 8 + b;
-                    if (y < m.H && m.get(x, y)) {
+                    if (y < this.H && this.getPix(x, y)) {
                         byte |= 1 << 7;
                     }
                 }
@@ -144,45 +129,45 @@ export class Mono8Vrow extends Mono {
     }
 }
 
-export class MonoGImg extends Mono {
+export class MonoGImg extends MonoBase {
     static name = 'GyverGFX Image';
     ext = 'img';
     prefix = 'gfximage_t';
 
-    async encode() {
-        let m = this.getImg();
-        let mapsize = Math.ceil(m.H / 8) * m.W + 4;
-        let pack = MonoGPack.make(m);
-        return Uint8Array.from((mapsize <= pack.length) ? [0].concat(MonoGMap.make(m)) : [1].concat(pack));
+    encode() {
+        let mapsize = Math.ceil(this.H / 8) * this.W + 4;
+        let pack = MonoGPack.make(this.buf, this.w, this.h);
+        return Uint8Array.from((mapsize <= pack.length) ? [0].concat(MonoGMap.make(this.buf, this.w, this.h)) : [1].concat(pack));
     }
 }
 
-export class MonoGMap extends Mono {
+export class MonoGMap extends MonoBase {
     static name = 'GyverGFX BitMap';
     ext = 'map';
     prefix = 'gfxmap_t';
 
-    async encode() {
-        return Uint8Array.from(MonoGMap.make(this.getImg()));
+    encode() {
+        return Uint8Array.from(MonoGMap.make(this.buf, this.w, this.h));
     }
 
-    static make(m) {
-        return getWH16_LSB(m.W, m.H).concat(Mono8Vcol.make(m));
+    static make(buf, w, h) {
+        return getWH16_LSB(w, h).concat(Mono8Vcol.make(buf, w, h));
     }
 }
 
-export class MonoGPack extends Mono {
+export class MonoGPack extends MonoBase {
     static name = 'GyverGFX BitPack';
     ext = 'pack';
     prefix = 'gfxpack_t';
 
-    async encode() {
-        return Uint8Array.from(MonoGPack.make(this.getImg()));
+    encode() {
+        return Uint8Array.from(MonoGPack.make(this.buf, this.w, this.h));
     }
 
-    static make(m) {
-        let data = getWH16_LSB(m.W, m.H);
+    static make(buf, w, h) {
+        let data = getWH16_LSB(w, h);
         let i = 0, value = 0, shift = 0;
+        const get = (x, y) => buf[y * w + x];
 
         let push = () => {
             let chunk = (i << 1) | value;
@@ -204,9 +189,9 @@ export class MonoGPack extends Mono {
             }
         }
 
-        for (let x = 0; x < m.W; x++) {
-            for (let y = 0; y < m.H; y++) {
-                let v = m.get(x, y) ? 1 : 0;
+        for (let x = 0; x < w; x++) {
+            for (let y = 0; y < h; y++) {
+                let v = get(x, y) ? 1 : 0;
                 if (!i) {
                     i = 1;
                     value = v;

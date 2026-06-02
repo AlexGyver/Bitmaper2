@@ -22,12 +22,19 @@ export let ui_out;
 /** @type {ImageCanvas} */
 export let cvimg;
 
-export let colors = {};
+// web colors
+const colors_pal = {
+    dark: { on: '#478be6', off: '#000000' },
+    light: { on: '#000000', off: '#ffffff' },
+};
+export let colors = colors_pal.light;
 
 let files = null;
-
-const grayFilters = ['posterize', 'sharpen', 'sobel', 'dither', 'thresh', 'contour', 'invert'];
+const grayFilters = ['brightness', 'contrast', 'gamma', 'blur', 'blur_iters', 'sharpen', 'sobel_edges', 'sobel_contour', 'canny', 'posterize', 'dither', 'thresh', 'median_r', 'median_iter', 'contour', 'thinner', 'erode', 'clean', 'invert'];
+const vignetteFilters = ['vignette_val', 'vignette_size', 'vignette_r'];
+const resetFilters = ['bblack', 'brightness', 'contrast', 'saturate', 'blur', 'posterizeRGB', 'mask', 'mask_color', 'mask_tol']
 const saveCfg = ['prev_width', 'fil_show', 'proc_show', 'proc_grid'];
+export const dither = ['None', 'Floyd-Steinberg', 'JJN', 'Bayer2', 'Bayer4', 'Bayer8', 'Stucki', 'Sierra2', 'Sierra3', 'SierraLite', 'Atkinson', 'Burkes', 'Riemersma'];
 
 //#region dark
 let darkmode;
@@ -49,8 +56,11 @@ export function setDark(dark) {
     dark ? document.body.classList.add('darkmode') : document.body.classList.remove('darkmode');
     let theme = (dark ? 'dark' : 'light');
     [ui_in, ui_out, ui_conv, ui_sel].forEach(ui => ui.setTheme(theme));
-    colors = { off: dark ? '#1e232a' : '#fff', on: dark ? '#478be6' : '#000000' };
+    colors = dark ? colors_pal.dark : colors_pal.light;
 }
+
+const defW = 300;
+const defH = 200;
 
 //#region init
 export function initUI() {
@@ -60,40 +70,61 @@ export function initUI() {
         .addInput('link', 'Link', '', file_h)
         .addButton('paste', 'Paste', paste_h)
         .addSpace()
-        .addNumber('width', 'Width', 128, 1, resize_h)
-        .addNumber('height', 'Height', 64, 1, resize_h)
+        .addNumber('width', 'Width', defW, 1, resize_h)
+        .addNumber('height', 'Height', defH, 1, resize_h)
         .addSwitch('precise_zoom', 'Precise zoom', false, (v) => cvimg.setZoomScale(v ? 0.05 : 1))
         .addButton('fit', 'Fit', () => cvimg.fit())
-        .addSwitch('mirror_x', 'Mirror X', false, update_h)
-        .addSwitch('mirror_y', 'Mirror Y', false, update_h)
-        .addSlider('angle', 'Rotate', 0, -180, 180, 5, update_h)
         .addSpace()
         .addSwitch('bblack', 'Black Background', false, update_h)
-        .addSlider('brightness', 'Brightness', 100, 0, 300, 5, update_h)
-        .addSlider('contrast', 'Contrast', 100, 0, 300, 5, update_h)
-        .addSlider('saturate', 'Saturation', 100, 0, 300, 5, update_h)
-        .addSlider('blur', 'Blur', 0, 0, 1, 0.05, update_h)
-        .addSlider('posterizeRGB', 'Posterize RGB', 0, 0, 64, 1, update_h)
+        .addSlider('rotate', 'Rotate', 0, -180, 180, 1, update_h)
+        .addSwitch('mirror_x', 'Mirror X', false, update_h)
+        .addSwitch('mirror_y', 'Mirror Y', false, update_h)
         .addSpace()
-        .addSwitch('mask', 'Color mask', false, mask_h)
-        .addColor('mask_color', 'Color', '#000000', update_h)
-        .addSlider('mask_tol', 'Tolerance', 0, 0, 400, 1, update_h)
-        .addSlider('mask_amp', 'Amplify', 1, 1, 10, 0.5, update_h)
+        .addSlider('brightness_rgb', 'Brightness', 0, -255, 255, 5, update_h)
+        .addSlider('contrast_rgb', 'Contrast', 0, -255, 255, 5, update_h)
+        .addSlider('gamma_rgb', 'Gamma', 1, 0, 3, 0.05, update_h)
+        .addSlider('saturate_rgb', 'Saturation', 0, -255, 255, 5, update_h)
+        .addSlider('blur_rgb', 'Blur', 0, 0, 10, 0.1, update_h)
+        .addSpace()
+        .addSwitch('vignette', 'Vignette', false, vignette_h)
+        .addSlider('vignette_val', 'Vignette value', 0, -1, 1, 0.05, update_h)
+        .addSlider('vignette_size', 'Vignette size', 0.65, 0, 2, 0.05, update_h)
+        .addSlider('vignette_r', 'Vignette radius', 0, 0, 1, 0.05, update_h)
+        .addSlider('R', 'R', 1, 0, 2, 0.01, update_h)
+        .addSlider('G', 'G', 1, 0, 2, 0.01, update_h)
+        .addSlider('B', 'B', 1, 0, 2, 0.01, update_h)
+        .addSpace()
+        .addSlider('posterizeRGB', 'Posterize RGB', 0, 0, 32, 1, update_h)
+        .addSpace()
+        .addColor('mask_color', 'Mask color', '#000000', update_h)
+        .addSelect('mask', 'Mask', ['None', 'HUE', 'HSV', 'RGB'], update_h)
+        .addSlider('mask_tol', 'Tolerance', 0.1, 0, 1, 0.01, update_h)
         .addSpace()
         .addSwitch('gray', 'Gray Filters', false, gray_h)
-        .addSwitch('sharpen', 'Sharpen', 0, update_h)
-        .addSlider('sobel', 'Edges Sobel', 0, 0, 1, 0.05, update_h)
+        .addSlider('brightness', 'Brightness', 0, -255, 255, 5, update_h)
+        .addSlider('contrast', 'Contrast', 0, -255, 255, 5, update_h)
+        .addSlider('gamma', 'Gamma', 1, 0, 3, 0.05, update_h)
+        .addSlider('blur', 'Blur', 0, 0, 10, 1, update_h)
+        .addSlider('blur_iters', 'Blur iters', 1, 1, 10, 1, update_h)
+        .addSlider('sharpen', 'Sharpen', 0, 0, 1, 0.01, update_h)
+        .addSlider('sobel_edges', 'Amplify edges', 0, -1, 1, 0.05, update_h)
         .addSlider('posterize', 'Posterize', 0, 0, 32, 1, update_h)
-        .addSelect('dither', 'Dithering', ['None', 'Floyd-Steinberg', 'JJN', 'Bayer'], update_h)
+        .addSelect('dither', 'Dithering', dither, update_h)
+        .addSwitch('sobel_contour', 'Sobel contour', false, update_h)
+        .addSlider('canny', 'Canny', 0, 0, 1, 0.05, update_h)
         .addSlider('thresh', 'Threshold', 0, 0, 255, 1, update_h)
-        // .addSwitch('median', 'Edges Median', 0, update_h)
-        .addSelect('contour', 'Contour', ['None', '4-dir', '8-dir'], update_h)
-        .addSwitch('invert', 'Invert', 0, update_h)
+        .addSlider('median_r', 'Median', 0, 0, 10, 1, update_h)
+        .addSlider('median_iter', 'Median iter', 1, 1, 10, 1, update_h)
+        .addSelect('contour', '1px contour', ['None', '4 dir', '8 dir'], update_h)
+        .addSwitch('thinner', 'Thinner', false, update_h)
+        .addSlider('erode', 'Erode/dilate', 0, -32, 32, 1, update_h)
+        .addSwitch('clean', 'Clean 1 px', false, update_h)
+        .addSwitch('invert', 'Invert', false, update_h)
         .addSpace()
         .addButton('reset', 'Reset', reset_h)
         .addSpace()
-        .addSlider('prev_width', 'Preview width', 900, 50, 1500, 1, prev_width_h)
         .addSwitch('fil_show', 'Show filter preview', true, fil_show_h)
+        .addSlider('prev_width', 'Preview width', 900, 50, 1500, 1, prev_width_h)
         .addButton('fil_png', 'Save filter .png', fil_png_h)
         .addSpace()
         .addSwitch('proc_show', 'Show process preview', true, proc_show_h)
@@ -105,8 +136,8 @@ export function initUI() {
     // =============== ui_sel ===============
     ui_sel = new UI({ parent: app.$ui_out, width: 'unset' })
         .addSelect('conv', 'Converter', converters.map(v => v.name), change_conv)
-        .addSwitch('auto_encode', 'Auto encode', true)
-        .addButton('encode', 'Encode', () => conv.show())
+        .addSwitch('autoShow', 'Auto show', true, () => conv.show())
+        .addButton('show', 'Show', () => conv.show())
 
     // =============== ui_conv ===============
     ui_conv = new UI({ parent: app.$ui_out, width: 'unset' })
@@ -135,8 +166,8 @@ export function initUI() {
     });
 
     // =====================
+    vignette_h(false);
     gray_h(false);
-    mask_h(false);
 
     const cfg = LS.get('bitmaper_cfg');
     if (cfg) {
@@ -180,10 +211,10 @@ function file_h(file) {
 
 async function loadFile(f, reset = true) {
     try {
-        let img = await loadImage(f);
-        cvimg.setImage(img.image, reset);
+        let res = await loadImage(f);
+        cvimg.setImage(res.image, reset);
         if (reset) {
-            ui_out.name = img.name;
+            ui_out.name = res.name;
             cvimg.fit();
         }
         update_h();
@@ -194,19 +225,180 @@ async function loadFile(f, reset = true) {
 }
 
 function reset_h() {
-    ['bblack', 'brightness', 'contrast', 'saturate', 'blur', 'posterizeRGB',
-        'mask', 'mask_color', 'mask_tol', 'mask_amp', ...grayFilters].forEach(f => ui_in.getWidget(f).default());
+    [...resetFilters, ...grayFilters].forEach(f => ui_in.widget(f).default());
     update_h();
 }
-export function update_h() {
-    cvimg.setFilter(ui_in.toObject());
-    cvimg.show();
-    let data = cvimg.getData();
-    if (data) conv.setData(data, cvimg.cv.width, cvimg.cv.height);
+export async function update_h() {
+    let fil = ui_in.toObject();
+
+    // rgb
+    let rgbfil = [];
+
+    if (fil.mirror_x || fil.mirror_y) rgbfil.push({
+        type: 'mirror',
+        x: fil.mirror_x,
+        y: fil.mirror_y,
+    });
+
+    if (fil.R != 1 || fil.G != 1 || fil.B != 1) rgbfil.push({
+        type: 'balance',
+        r: fil.R,
+        g: fil.G,
+        b: fil.B,
+    });
+
+    if (fil.brightness_rgb) rgbfil.push({
+        type: 'brightness',
+        value: fil.brightness_rgb,
+    });
+
+    if (fil.contrast_rgb) rgbfil.push({
+        type: 'contrast',
+        value: fil.contrast_rgb,
+    });
+
+    if (fil.gamma_rgb != 1) rgbfil.push({
+        type: 'gamma',
+        value: fil.gamma_rgb,
+    });
+
+    if (fil.saturate_rgb) rgbfil.push({
+        type: 'saturate',
+        value: fil.saturate_rgb,
+    });
+
+    if (fil.blur_rgb) rgbfil.push({
+        type: 'blur',
+        value: fil.blur_rgb,
+    });
+
+    if (fil.vignette) rgbfil.push({
+        type: 'vignette',
+        value: fil.vignette_val,
+        radius: fil.vignette_r,
+        size: fil.vignette_size,
+    });
+
+    if (fil.posterizeRGB) rgbfil.push({
+        type: 'posterize',
+        value: fil.posterizeRGB,
+    });
+
+    const mask = {
+        HUE: 'maskHUE',
+        HSV: 'maskHSV',
+        RGB: 'maskRGB',
+    }[fil.maskText];
+
+    if (mask) rgbfil.push({
+        type: mask,
+        color: fil.mask_color,
+        value: fil.mask_tol,
+    });
+
+    // gray
+    let grayfil = null;
+
+    if (fil.gray) {
+        grayfil = [];
+
+        if (fil.brightness) grayfil.push({
+            type: 'brightness',
+            value: fil.brightness,
+        });
+
+        if (fil.contrast) grayfil.push({
+            type: 'contrast',
+            value: fil.contrast,
+        });
+
+        if (fil.gamma) grayfil.push({
+            type: 'gamma',
+            value: fil.gamma,
+        });
+
+        if (fil.blur) grayfil.push({
+            type: 'blur',
+            value: fil.blur,
+            iters: fil.blur_iters,
+        });
+
+        if (fil.sharpen) grayfil.push({
+            type: 'sharpen',
+            value: fil.sharpen,
+        });
+
+        if (fil.sobel_edges) grayfil.push({
+            type: 'sobel_edges',
+            value: fil.sobel_edges,
+        });
+
+        if (fil.posterize) grayfil.push({
+            type: 'posterize',
+            value: fil.posterize,
+        });
+
+        if (fil.dither) grayfil.push({
+            type: 'dither',
+            value: fil.ditherText,
+        });
+
+        if (fil.sobel_contour) grayfil.push({
+            type: 'sobel_contour',
+            value: 1,
+        });
+
+        if (fil.canny) grayfil.push({
+            type: 'canny',
+            value: fil.canny,
+        });
+
+        if (fil.thresh) grayfil.push({
+            type: 'threshold',
+            value: fil.thresh,
+        });
+
+        if (fil.median_r) grayfil.push({
+            type: 'median',
+            value: fil.median_r,
+            iters: fil.median_iter,
+        });
+
+        if (fil.contour) grayfil.push({
+            type: 'contour',
+            diag: fil.contour == 2, // 0 none, 1 cross, 2 diag
+        });
+
+        if (fil.thinner) grayfil.push({
+            type: 'thinner',
+        });
+
+        if (fil.erode) grayfil.push({
+            type: 'erode',
+            value: fil.erode,
+        });
+
+        if (fil.clean) grayfil.push({
+            type: 'clean',
+        });
+
+        if (fil.invert) grayfil.push({
+            type: 'invert',
+        });
+    }
+
+    try {
+        let idata = await cvimg.preview(fil.bblack, fil.rotate, rgbfil, grayfil);
+        if (idata) conv.setData(idata);
+    } catch (e) {
+        console.log(e);
+    }
 }
 
 function resize_h() {
-    let w = ui_in.width, h = ui_in.height;
+    let w = ui_in.width;
+    let h = ui_in.height;
+    if (!h) h = w;
     document.body.style.setProperty('--ratio', w / h);
     cvimg.cv.width = w;
     cvimg.cv.height = h;
@@ -217,13 +409,13 @@ function resize_h() {
 async function encode() {
     let res;
     if (!files) {
-        res = await conv.encode();
+        res = conv.encode();
         ui_out.result = `Saved ${res.byteLength} bytes`;
     } else {
         res = [];
         for (let file of files) {
             await loadFile(file, false);
-            res.push(await conv.encode());
+            res.push(conv.encode());
         }
         let size = 0;
         res.forEach(r => size += r.byteLength);
@@ -238,9 +430,7 @@ async function copy_h() {
 }
 async function saveH_h() {
     let res = await encode();
-    if (!res) return;
-
-    download(new Blob([encodeText(makeH(res))], { type: "text/plain" }), ui_out.name + '.h');
+    if (res) download(new Blob([encodeText(makeH(res))], { type: "text/plain" }), ui_out.name + '.h');
 }
 async function saveBin_h() {
     let res = await encode();
@@ -255,7 +445,7 @@ async function send_h() {
     let formData = new FormData();
     formData.append('bitmap', new Blob([res], { type: "application/octet-stream" }));
 
-    let ok = await fetchT(window.location.href + `bitmap?width=${conv.img.W}&height=${conv.img.H}&type=${conv.ext}`, {
+    let ok = await fetchT(window.location.href + `bitmap?width=${conv.W}&height=${conv.H}&type=${conv.ext}`, {
         method: 'POST',
         body: formData,
         timeout: 2000
@@ -297,7 +487,7 @@ const uint16_t ${name}_h = ${h};
     if (Array.isArray(res)) {
         let size = 0;
         res.forEach(r => size += r.byteLength);
-        code += header(`${res.length} images, ${size} bytes`, conv.img.W, conv.img.H);
+        code += header(`${res.length} images, ${size} bytes`, conv.W, conv.H);
 
         let names = '';
         for (let i in res) {
@@ -314,7 +504,7 @@ const uint16_t ${name}_h = ${h};
         code += `${conv.prefix}* const ${name}_list[] = {\n\t${names}\n};`;
 
     } else {
-        code += header(`${res.byteLength} bytes`, conv.img.W, conv.img.H);
+        code += header(`${res.byteLength} bytes`, conv.W, conv.H);
         code += makeArray(res, name, pgm);
     }
 
@@ -322,7 +512,6 @@ const uint16_t ${name}_h = ${h};
 }
 
 //#region etc
-
 function save_png(cv, name) {
     let link = document.createElement('a');
     link.href = cv.toDataURL('image/png');
@@ -337,11 +526,11 @@ function proc_png_h() {
     save_png(conv.cv, ui_out.name + '.proc');
 }
 function gray_h(show) {
-    grayFilters.forEach(f => ui_in.getWidget(f).display(show));
+    grayFilters.forEach(f => ui_in.widget(f).display(show));
     update_h();
 }
-function mask_h(show) {
-    ['mask_tol', 'mask_amp'].forEach(f => ui_in.getWidget(f).display(show));
+function vignette_h(show) {
+    vignetteFilters.forEach(f => ui_in.widget(f).display(show));
     update_h();
 }
 function fil_show_h(show) {
